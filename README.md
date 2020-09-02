@@ -224,5 +224,7 @@ float getTemp(){    //Beiwerk zur Temperatur
 ## Links
 
 DS3231.h - https://github.com/NorthernWidget/DS3231
+
 OneEire.h - https://www.pjrc.com/teensy/td_libs_OneWire.html
+
 LowPower.h - https://github.com/rocketscream/Low-Power
