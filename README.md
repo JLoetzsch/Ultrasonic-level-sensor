@@ -1,7 +1,6 @@
 ## Ultrasonic-level-sensor
 
-This code is for an Arduino based ultrasonic level sensor, which can used to determin the level of water in a river. It's a part of a master thesis from Technische Universität Dresden.
-
+This code is for an Arduino based ultrasonic level sensor, which can used to determin the level of water.
 ## Code
 ```
 //sketch for low-budget-sensor (02.09.2020)
