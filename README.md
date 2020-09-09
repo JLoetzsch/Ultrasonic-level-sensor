@@ -7,7 +7,7 @@ This code is for an Arduino based ultrasonic level sensor, which can used to det
 //sketch for low-budget-sensor (02.09.2020)
 
 
-//necessary libaries, under the point Links you will find the download location from the libaries
+//necessary libaries, under the point links you will find the download location for the libaries
 #include "LowPower.h"
 #include <SD.h>
 #include <SPI.h>
@@ -15,53 +15,58 @@ This code is for an Arduino based ultrasonic level sensor, which can used to det
 #include <OneWire.h>
 
 
-File myFile;                      //erstellt die Variable Datei
-DS3231 rtc(SDA, SCL);             //iniziert RTC-Kommunikation
+File myFile;                      
+DS3231 rtc(SDA, SCL);             //initiation of RTC
 
-long Messintervall = 60000;       //Zeit der Messabstände in ms, mind. 10000 ms sonst ist der Idle-Mode nicht aktiv
-long x_Mess = 10;                 //Anzahl der Messwerte
-float xAbstand = 0;               //Abstand Sohle - Messgerät (84.2)
+long Messintervall = 60000;       //time of measure interval in ms
+long x_Mess = 10;                 //amount of measured values
+float xAbstand = 0;               //distance bottom - ultrasonic sensor
 
-int DS18S20_Pin = 5;              //DS18S20 Signal pin on digital 2
-int triggerPIN = 4;               //legt den Namen und Pin für den Trigger am Sensor fest 
-int echoPIN = 3;                  //legt den Namen und Pin für den Echo am Sensor fest
+int DS18S20_Pin = 5;              //DS18S20 signal pin on digital 5 (temperature sensor)
+int triggerPIN = 4;               //ultrasonic sensor trigger signal on digital 4
+int echoPIN = 3;                  //ultrasonic sensor echo signal on digital 3
 
-float messung = 0;                //Mittelwert aus den Messungen
-float ergebnis = 0;               //Berechnete Füllhöhe/Abstand
-float vs = 0;                     //Berechnete Schallgeschwindigkeit
-float t = 0;                      //gemessene Zeit des Sensors (gesamt)
-float tx = 0;                     //gemessene Zeit des Sensors (momentan)
-int x_Vergleich = 0;              //Variable zum Hochzählen der Anzahl an Messwerten
-int x_Power = 0;                  //Variable zum Hochzählen der Anzahl an Schlafroutinen
-long Messintervall_x = 0;         //Berechnung der Anzahl an Schlafroutinen
+float messung = 0;                //mean value from measurements
+float ergebnis = 0;               //result of caculated water level
+float vs = 0;                     //caculated speed of sound
+float t = 0;                      //measured time of ultrasonic sensor (total)
+float tx = 0;                     //measured time of ultrasonic sensor (from single measurement)
+int x_Vergleich = 0;              //variable for the amount of measured values
+int x_Power = 0;                  //variable for the amount of idle mode routines
+long Messintervall_x = 0;         //variable for calculation of the amount of idle mode routines
 long Delay = 0;
 
 
-const int chipSelect = 10;
+const int chipSelect = 10;        //chip select pin on digital 10 (for SD-Card Modul)
 
-int pinCS = 10;                   // Pin 10 on Arduino Uno
+int pinCS = 10;                   //chip select pin on digital 10 (for SD-Card Modul)
 
-OneWire ds(DS18S20_Pin);          // on digital pin 2
+OneWire ds(DS18S20_Pin);          //
+
 
 void setup() {
  
-Serial.begin(115200);             // öffnet die serielle Schnittstelle und stellt die Datenrate auf 9600Bit/s ein
-delay(20);
-pinMode(pinCS, OUTPUT);           //pinMode definiert ob Digitale Pins gleich In oder Output sind
-pinMode (triggerPIN, OUTPUT);
-pinMode (echoPIN, INPUT);
+Serial.begin(115200);             // starts the serial communication
 
-Messintervall_x = ((Messintervall-(x_Mess*512))/9255); //berechnet die Anzahl der Wiederholungen des 8sekündigen Schlafmodus, um in etwa den Messintervall zu erreichen ((Messintervall-(x_Mess*512))/8000) 8255
-Serial.print("Anzahl der Routinen =");
+pinMode(pinCS, OUTPUT);           //pinCS = Output
+pinMode (triggerPIN, OUTPUT);     //triggerPin = Output
+pinMode (echoPIN, INPUT);         //echoPin = Input
+
+Messintervall_x = ((Messintervall-(x_Mess*512))/9255);
+//calculate the amount of repetitions of idle mode, formula: Amount of repetions = ((time of measure interval)-(amount of measured values)*(total delay during the measurement (512ms)))/((time of idle mode (8255ms) + (total delay during idle mode routine(1000ms)))
+
+Serial.print("Anzahl der Routinen =");  //print the result in serial monitor 
 Serial.println(Messintervall_x);
 delay(20);
 
-Delay = (Messintervall-(Messintervall_x*9255)-(12*x_Mess)-(512*x_Mess)); //berechnet den Delay um auf auf das Messintervall zu kommen ... Delay = (Messintervall- (Anzahl Messintervalle * Zeit des Schlafzyklus) - (delay der Messung * Anzahl Messung) - (zusätzliches delay der Messung * Anzahl Messung))
-Serial.print("Rest Delay [ms] =");
+Delay = (Messintervall-(Messintervall_x*9255)-(512*x_Mess)); 
+//calculate the delay um auf auf das Messintervall zu kommen, formula: Delay = ((time of measure interval)-(amount of repetions)*(total time of idle mode)-(total time of measurment
+
+Serial.print("Rest Delay [ms] =");     //print the result in serial monitor
 Serial.println(Delay);
 delay(20);
 
-//SD, Card Initialization (Gibt im seriellen Monitor die Funktionalität der SD Karte wieder)
+//initialisation of SD Card-Modul
 if (SD.begin())
 {
   Serial.println("SD card is ready to use.");
@@ -75,7 +80,7 @@ if (SD.begin())
 delay(1000);
 Serial.println("SD card initialization failed");
 
-return; //Unterbrechung des Setups, um es von neuem zu starten
+return; //stops "void setup"
 
 }
 
@@ -83,20 +88,24 @@ rtc.begin();
 
 }
 
+
 void loop() {
 
-while (x_Power < Messintervall_x) //Routine für Idle-Mode, wird so lange wiederholt bis der Messintervall erreicht ist
+while (x_Power < Messintervall_x) //routine of idle mode
+
 {
 LowPower.idle(SLEEP_8S, ADC_OFF, TIMER2_OFF, TIMER1_OFF, TIMER0_OFF, 
                 SPI_OFF, USART0_OFF, TWI_OFF);
-x_Power++;
-Serial.println(x_Power);                 //Kontrolle für seriellen Monitor
-delay(1000);                              //Delay für eine bessere serielle Kommunikation
+                
+x_Power++;                               //count plus one
+Serial.println(x_Power);                 //prints value of counter in serial monitor for control
+delay(1000);                             //delay for a better serial communication (1000ms)
+
 }
-   delay(Delay);                         //Ausgleichs delay
-   x_Power = 0;
+   delay(Delay);                         //rest delay
+   x_Power = 0;                          //zeroing the counter
  
-   while (x_Mess > x_Vergleich)          //Messroutine aus x Messwerten wird ein Mittelwert gebildet
+   while (x_Mess > x_Vergleich)          //start measurement rountine
   {
   digitalWrite(triggerPIN,LOW);
   delayMicroseconds(2);
@@ -104,9 +113,9 @@ delay(1000);                              //Delay für eine bessere serielle Kom
   delayMicroseconds(10);
   digitalWrite(triggerPIN,LOW);
 
-  tx = pulseIn(echoPIN, HIGH);
+  tx = pulseIn(echoPIN, HIGH);           //save the result
   
-    while (tx <= 1)                      //Routine im Fall eines Nullwertes
+    while (tx <= 1)                      //start: checking the result, in case of value of zero the measurement will repeat
       {
         digitalWrite(triggerPIN,LOW);
         delayMicroseconds(2);
@@ -114,28 +123,28 @@ delay(1000);                              //Delay für eine bessere serielle Kom
         delayMicroseconds(10);
         digitalWrite(triggerPIN,LOW);
 
-        tx = pulseIn(echoPIN, HIGH);
-      }
+        tx = pulseIn(echoPIN, HIGH);    //overwrite the result
+      }                                 //end: checking result
   
-  t = (t+tx);                           //Aufsummierung der Messwerte 
-  x_Vergleich++;                        //Zähler für die x Durchläufe
-  Serial.print(t);                      //Kontrolle der Zwischenwerte
+  t = (t+tx);                           //summation of the measured values
+  x_Vergleich++;                        //counter plus one
+  Serial.print(t);                      //prints the sum; actual value; counter in serial monitor for control
   Serial.print(";");
   Serial.print(tx);
   Serial.print(";");
-  Serial.println(x_Vergleich);
-  delay(500);
-  }
+  Serial.println(x_Vergleich);         
+  delay(500);                           //delay for a safe power supply between the measurements (500ms)
+  }                                     //end of the measurement routine
 
- float temperature = getTemp();        //Temperatur auslesen 
+ float temperature = getTemp();         //get the temperature  
 
-  x_Vergleich = 0;                      //nullen des Zählers
-  messung = (t/x_Mess);                 //Berechnung des Mittelwertes 
-  t = 0;                                //nullen der Summe
-  vs = (331.5+(0.6*temperature));       //Berechnung der Schallgeschindigkeit in abhängikeit von der Temperatur     
-  ergebnis = (xAbstand-(vs*messung/(2*10000)));    //Berechnung des Abstandes/Füllhöhe
+  x_Vergleich = 0;                      //zeroing the counter
+  messung = (t/x_Mess);                 //calculate mean value of measurements 
+  t = 0;                                //zeroing the sum
+  vs = (331.5+(0.6*temperature));       //calculate approximately the sound of speed     
+  ergebnis = (xAbstand-(vs*messung/(2*10000))); //calculate the water level, formula: (water level) = (distance between bottom - ultrasonic sensor)-((sound of speed)*(mean value of measurements)/(2*10000(cm/m)*(s/µs)))
 
-  Serial.print(rtc.getTimeStr());       //Kontrolle durch seriellen Output der Daten
+  Serial.print(rtc.getTimeStr());       //prints time; date; temperature; measured time; water level in serial monitor for control
   Serial.print(";");
   Serial.print(rtc.getDateStr());
   Serial.print(";");
@@ -147,7 +156,7 @@ delay(1000);                              //Delay für eine bessere serielle Kom
   Serial.print(ergebnis,1);
   Serial.println("cm");
 
-  myFile = SD.open("daten.txt", FILE_WRITE);  //Schreiben der Daten auf die SD
+  myFile = SD.open("daten.txt", FILE_WRITE);  //writes time; date; temperature; measured time; water level on the SD-card
   if (myFile) {
     myFile.print(rtc.getTimeStr());
     myFile.print(";");
@@ -173,7 +182,7 @@ delay(1000);                              //Delay für eine bessere serielle Kom
 
 } 
 
-float getTemp(){    //Beiwerk zur Temperatur 
+float getTemp(){   
   //returns the temperature from one DS18S20 in DEG Celsius
 
   byte data[12];
