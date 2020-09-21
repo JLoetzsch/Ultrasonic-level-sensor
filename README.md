@@ -51,14 +51,14 @@ pinMode(pinCS, OUTPUT);           //pinCS = Output
 pinMode (triggerPIN, OUTPUT);     //triggerPin = Output
 pinMode (echoPIN, INPUT);         //echoPin = Input
 
-Messintervall_x = ((Messintervall-(x_Mess*512))/9255);
-//calculate the amount of repetitions of idle mode, formula: Amount of repetions = ((time of measure interval)-(amount of measured values)*(total delay during the measurement (512ms)))/((time of idle mode (8255ms) + (total delay during idle mode routine(1000ms)))
+Messintervall_x = ((Messintervall-(x_Mess*212))/8355);
+//calculate the amount of repetitions of idle mode, formula: Amount of repetions = ((time of measure interval)-(amount of measured values)*(total delay during the measurement (212ms)))/((time of idle mode (8255ms) + (total delay during idle mode routine(100ms)))
 
 Serial.print("Anzahl der Routinen =");  //print the result in serial monitor 
 Serial.println(Messintervall_x);
 delay(20);
 
-Delay = (Messintervall-(Messintervall_x*9255)-(512*x_Mess)); 
+Delay = (Messintervall-(Messintervall_x*8355)-(212*x_Mess)); 
 //calculate the delay um auf auf das Messintervall zu kommen, formula: Delay = ((time of measure interval)-(amount of repetions)*(total time of idle mode)-(total time of measurment
 
 Serial.print("Rest Delay [ms] =");     //print the result in serial monitor
@@ -98,7 +98,7 @@ LowPower.idle(SLEEP_8S, ADC_OFF, TIMER2_OFF, TIMER1_OFF, TIMER0_OFF,
                 
 x_Power++;                               //count plus one
 Serial.println(x_Power);                 //prints value of counter in serial monitor for control
-delay(1000);                             //delay for a better serial communication (1000ms)
+delay(100);                              //delay for a better serial communication (1000ms)
 
 }
    delay(Delay);                         //rest delay
@@ -132,7 +132,7 @@ delay(1000);                             //delay for a better serial communicati
   Serial.print(tx);
   Serial.print(";");
   Serial.println(x_Vergleich);         
-  delay(500);                           //delay for a safe power supply between the measurements (500ms)
+  delay(200);                           //delay for a safe power supply between the measurements (500ms)
   }                                     //end of the measurement routine
 
  float temperature = getTemp();         //get the temperature  
